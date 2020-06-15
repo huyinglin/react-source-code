@@ -422,16 +422,54 @@ ReactRoot.prototype.createBatch = function(): Batch {
  * @internal
  */
 function isValidContainer(node) {
+  /**
+   * nodeType: https://developer.mozilla.org/zh-CN/docs/Web/API/Node/nodeType#%E8%8A%82%E7%82%B9%E7%B1%BB%E5%9E%8B%E5%B8%B8%E9%87%8F
+   *
+   * Node.ELEMENT_NODE	                1	  一个 元素 节点，例如 <p> 和 <div>。
+   * Node.TEXT_NODE	                    3	  Element 或者 Attr 中实际的  文字
+   * Node.CDATA_SECTION_NODE	          4	  一个 CDATASection，例如 <!CDATA[[ … ]]>。
+   * Node.PROCESSING_INSTRUCTION_NODE	  7	  一个用于XML文档的 ProcessingInstruction ，例如 <?xml-stylesheet ... ?> 声明。
+   * Node.COMMENT_NODE	                8	  一个 Comment 节点。
+   * Node.DOCUMENT_NODE	                9	  一个 Document 节点。
+   * Node.DOCUMENT_TYPE_NODE	          10	描述文档类型的 DocumentType 节点。例如 <!DOCTYPE html>  就是用于 HTML5 的。
+   * Node.DOCUMENT_FRAGMENT_NODE	      11	一个 DocumentFragment 节点。
+   *
+   *
+   * nodeValue: https://developer.mozilla.org/zh-CN/docs/Web/API/Node/nodeValue
+   *
+   * 对于文档节点来说, nodeValue返回null. 对于text, comment, 和 CDATA 节点来说, nodeValue返回该节点的文本内容. 对于 attribute 节点来说, 返回该属性的属性值.
+   * 下表就是不同类型的节点所返回的该属性的值.
+   *
+   * ----------------------------------------------
+   *  Node	                | Value of nodeValue
+   * ----------------------------------------------
+   *  CDATASection	        | CDATA的文本内容
+   *  Comment	              | 注释的文本内容
+   *  Document	            | null
+   *  DocumentFragment	    | null
+   *  DocumentType	        | null
+   *  Element	              | null
+   *  NamedNodeMap	        | null
+   *  EntityReference	      | null
+   *  Notation	            | null
+   *  ProcessingInstruction | 整个标签的文本内容
+   *  Text	                | 文本节点的内容
+   * ----------------------------------------------
+   *
+   * 如果nodeValue的值为null,则对它赋值也不会有任何效果.
+   *
+   */
   return !!(
     node &&
-    (node.nodeType === ELEMENT_NODE ||
-      node.nodeType === DOCUMENT_NODE ||
-      node.nodeType === DOCUMENT_FRAGMENT_NODE ||
-      (node.nodeType === COMMENT_NODE &&
+    (node.nodeType === ELEMENT_NODE ||            // 元素 节点，例如 <p> 和 <div>
+      node.nodeType === DOCUMENT_NODE ||          // Document 节点
+      node.nodeType === DOCUMENT_FRAGMENT_NODE || // DocumentFragment 节点
+      (node.nodeType === COMMENT_NODE &&          // 注释节点
         node.nodeValue === ' react-mount-point-unstable '))
   );
 }
 
+// 获取容器中的根元素
 function getReactRootElementInContainer(container: any) {
   if (!container) {
     return null;
@@ -461,6 +499,7 @@ ReactGenericBatching.setBatchingImplementation(
 
 let warnedAboutHydrateAPI = false;
 
+// @step3
 function legacyCreateRootFromDOMContainer(
   container: DOMContainer,
   forceHydrate: boolean,
@@ -506,10 +545,11 @@ function legacyCreateRootFromDOMContainer(
   return new ReactRoot(container, isConcurrent, shouldHydrate);
 }
 
+// @step2
 function legacyRenderSubtreeIntoContainer(
-  parentComponent: ?React$Component<any, any>,
-  children: ReactNodeList,
-  container: DOMContainer,
+  parentComponent: ?React$Component<any, any>, // null
+  children: ReactNodeList, // <App />
+  container: DOMContainer, // document.getElementById('root')
   forceHydrate: boolean,
   callback: ?Function,
 ) {
@@ -528,6 +568,7 @@ function legacyRenderSubtreeIntoContainer(
   let root: Root = (container._reactRootContainer: any);
   if (!root) {
     // Initial mount
+    // 第一次是肯定没有 container._reactRootContainer 的
     root = container._reactRootContainer = legacyCreateRootFromDOMContainer(
       container,
       forceHydrate,
@@ -535,7 +576,7 @@ function legacyRenderSubtreeIntoContainer(
     if (typeof callback === 'function') {
       const originalCallback = callback;
       callback = function() {
-        const instance = DOMRenderer.getPublicRootInstance(root._internalRoot);
+        const instance = DOMRenderer.getPublicRootInstance(root._internalRoot); // ?
         originalCallback.call(instance);
       };
     }
@@ -586,8 +627,9 @@ function createPortal(
   return ReactPortal.createPortal(children, container, null, key);
 }
 
+// @step1 ReactDOM
 const ReactDOM: Object = {
-  createPortal,
+  createPortal, // 传送门
 
   findDOMNode(
     componentOrElement: Element | ?React$Component<any, any>,
@@ -627,25 +669,25 @@ const ReactDOM: Object = {
   hydrate(element: React$Node, container: DOMContainer, callback: ?Function) {
     // TODO: throw or warn if we couldn't hydrate?
     return legacyRenderSubtreeIntoContainer(
-      null,
-      element,
-      container,
-      true,
-      callback,
+      null, // parentComponent: ?React$Component<any, any>,
+      element, // children: ReactNodeList,
+      container, // container: DOMContainer,
+      true, // forceHydrate: boolean,
+      callback, // callback: ?Function,
     );
   },
 
   render(
-    element: React$Element<any>,
-    container: DOMContainer,
+    element: React$Element<any>, // <App />
+    container: DOMContainer, // DOM -> document.getElementById('root')
     callback: ?Function,
   ) {
     return legacyRenderSubtreeIntoContainer(
-      null,
-      element,
-      container,
-      false,
-      callback,
+      null, // parentComponent: ?React$Component<any, any>,
+      element, // children: ReactNodeList,
+      container, // container: DOMContainer,
+      false, // forceHydrate: boolean,
+      callback, // callback: ?Function,
     );
   },
 
