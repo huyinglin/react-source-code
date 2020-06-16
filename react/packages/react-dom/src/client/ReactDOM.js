@@ -515,7 +515,7 @@ function legacyCreateRootFromDOMContainer(
         if (
           !warned &&
           rootSibling.nodeType === ELEMENT_NODE &&
-          (rootSibling: any).hasAttribute(ROOT_ATTRIBUTE_NAME)
+          (rootSibling: any).hasAttribute(ROOT_ATTRIBUTE_NAME) 
         ) {
           warned = true;
           warningWithoutStack(

@@ -215,6 +215,9 @@ function appendUpdateToQueue<State>(
 
 export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
   // Update queues are created lazily.
+  // 在Fiber树更新的过程中，每个Fiber都会有一个跟其对应的Fiber
+  // 我们称他为`current <==> workInProgress`
+  // 在渲染完成之后他们会交换位置
   const alternate = fiber.alternate;
   let queue1;
   let queue2;
