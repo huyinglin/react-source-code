@@ -311,10 +311,12 @@ export function getPublicRootInstance(
   if (!containerFiber.child) {
     return null;
   }
-  switch (containerFiber.child.tag) {
+  switch (containerFiber.child.tag) { // 组件类型
     case HostComponent:
       return getPublicInstance(containerFiber.child.stateNode);
     default:
+      // .child: 指向自己的第一个子节点
+      // .stateNode: 跟当前Fiber相关本地状态（比如浏览器环境就是DOM节点）
       return containerFiber.child.stateNode;
   }
 }

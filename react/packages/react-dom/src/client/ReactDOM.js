@@ -343,15 +343,20 @@ ReactRoot.prototype.render = function(
   children: ReactNodeList,
   callback: ?() => mixed,
 ): Work {
+  // 这里指 FiberRoot
   const root = this._internalRoot;
   const work = new ReactWork();
+  // ReactWork 的功能就是为了在组件渲染或更新后把所有传入
+  // ReactDom.render 中的回调函数全部执行一遍
   callback = callback === undefined ? null : callback;
   if (__DEV__) {
     warnOnInvalidCallback(callback, 'render');
   }
+  // 如果有 callback，就 push 进 work 中的数组
   if (callback !== null) {
     work.then(callback);
   }
+  // work._onCommit 就是用于执行所有回调函数的
   DOMRenderer.updateContainer(children, root, null, work._onCommit);
   return work;
 };
@@ -510,6 +515,11 @@ function legacyCreateRootFromDOMContainer(
   if (!shouldHydrate) {
     let warned = false;
     let rootSibling;
+
+    // container 内部如果有元素的话，就全部清掉
+    // 但是一般来说我们都是这样写 container 的： <div id='root'></div>
+    // 所以说 container 内部不要写任何的节点，一是会被清掉，二是还要进行 DOM 操作，可能还会涉及到重绘回流等等
+
     while ((rootSibling = container.lastChild)) {
       if (__DEV__) {
         if (
