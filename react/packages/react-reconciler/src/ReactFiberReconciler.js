@@ -278,8 +278,11 @@ export function updateContainer(
   parentComponent: ?React$Component<any, any>,
   callback: ?Function,
 ): ExpirationTime {
+  // 取出容器的 fiber 对象，也就是 fiber root
   const current = container.current;
   const currentTime = requestCurrentTime();
+  // expirationTime 代表优先级，数字越大优先级越高
+  // sync 的数字是最大的，所以优先级也是最高的
   const expirationTime = computeExpirationForFiber(currentTime, current);
   return updateContainerAtExpirationTime(
     element,

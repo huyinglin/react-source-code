@@ -343,11 +343,10 @@ ReactRoot.prototype.render = function(
   children: ReactNodeList,
   callback: ?() => mixed,
 ): Work {
-  // 这里指 FiberRoot
-  const root = this._internalRoot;
-  const work = new ReactWork();
+  const root = this._internalRoot; // FiberRoot
   // ReactWork 的功能就是为了在组件渲染或更新后把所有传入
   // ReactDom.render 中的回调函数全部执行一遍
+  const work = new ReactWork();
   callback = callback === undefined ? null : callback;
   if (__DEV__) {
     warnOnInvalidCallback(callback, 'render');
@@ -504,7 +503,6 @@ ReactGenericBatching.setBatchingImplementation(
 
 let warnedAboutHydrateAPI = false;
 
-// @step3
 function legacyCreateRootFromDOMContainer(
   container: DOMContainer,
   forceHydrate: boolean,
@@ -525,7 +523,7 @@ function legacyCreateRootFromDOMContainer(
         if (
           !warned &&
           rootSibling.nodeType === ELEMENT_NODE &&
-          (rootSibling: any).hasAttribute(ROOT_ATTRIBUTE_NAME) 
+          (rootSibling: any).hasAttribute(ROOT_ATTRIBUTE_NAME)
         ) {
           warned = true;
           warningWithoutStack(
@@ -555,7 +553,7 @@ function legacyCreateRootFromDOMContainer(
   return new ReactRoot(container, isConcurrent, shouldHydrate);
 }
 
-// @step2
+// 返回节点实例
 function legacyRenderSubtreeIntoContainer(
   parentComponent: ?React$Component<any, any>, // null
   children: ReactNodeList, // <App />
@@ -575,6 +573,17 @@ function legacyRenderSubtreeIntoContainer(
 
   // TODO: Without `any` type, Flow says "Property cannot be accessed on any
   // member of intersection type." Whyyyyyy.
+  // type Root = {
+  //   render(children: ReactNodeList, callback: ?() => mixed): Work,
+  //   unmount(callback: ?() => mixed): Work,
+  //   legacy_renderSubtreeIntoContainer(
+  //     parentComponent: ?React$Component<any, any>,
+  //     children: ReactNodeList,
+  //     callback: ?() => mixed,
+  //   ): Work,
+  //   createBatch(): Batch,
+  //   _internalRoot: FiberRoot,
+  // };
   let root: Root = (container._reactRootContainer: any);
   if (!root) {
     // Initial mount
@@ -586,7 +595,7 @@ function legacyRenderSubtreeIntoContainer(
     if (typeof callback === 'function') {
       const originalCallback = callback;
       callback = function() {
-        const instance = DOMRenderer.getPublicRootInstance(root._internalRoot); // ?
+        const instance = DOMRenderer.getPublicRootInstance(root._internalRoot); // 获取跟节点实例
         originalCallback.call(instance);
       };
     }
@@ -641,6 +650,9 @@ function createPortal(
 const ReactDOM: Object = {
   createPortal, // 传送门
 
+  // findDOMNode 是一个访问底层 DOM 节点的应急方案（escape hatch）。
+  // 在大多数情况下，不推荐使用该方法，因为它会破坏组件的抽象结构。严格模式下该方法已弃用。
+  // 大多数情况下，你可以绑定一个 ref 到 DOM 节点上，可以完全避免使用 findDOMNode。
   findDOMNode(
     componentOrElement: Element | ?React$Component<any, any>,
   ): null | Element | Text {
